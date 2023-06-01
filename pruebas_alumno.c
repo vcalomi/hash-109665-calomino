@@ -104,6 +104,31 @@ void pruebas_eliminacion()
 		     "Quitar un elemento que ya saque devuelve NULL");
 	hash_destruir(hash);
 }
+
+void pruebas_obtencion()
+{
+	pa2m_afirmar(hash_obtener(NULL, "K") == NULL,
+		     "Buscar en un hash nulo devuelve NULL");
+
+	size_t capacidad = 10;
+	hash_t *hash = hash_crear(capacidad);
+
+	int *anterior;
+	hash_insertar(hash, "k", 10, anterior);
+
+	pa2m_afirmar(hash_obtener(hash, NULL) == NULL,
+		     "Obtener con una clave NULL devuelve NULL");
+	pa2m_afirmar(
+		hash_obtener(hash, "l") == NULL,
+		"Obtener un elemento que no existe en el hash devuelve NULL");
+	pa2m_afirmar(
+		hash_obtener(hash, "k") == 10,
+		"Obtener con una clave que se encuentra en el hash devuelve el elemento correcto");
+	hash_quitar(hash, "k");
+	pa2m_afirmar(hash_obtener(hash, "k") == NULL,
+		     "Obtener con una clave que se quito devuelve NULL");
+	hash_destruir(hash);
+}
 int main()
 {
 	pa2m_nuevo_grupo("\nPruebas de Creacion");
@@ -114,6 +139,9 @@ int main()
 
 	pa2m_nuevo_grupo("\nPruebas de Eliminacion");
 	pruebas_eliminacion();
+
+	pa2m_nuevo_grupo("\nPruebas de Obtencion");
+	pruebas_obtencion();
 
 	return pa2m_mostrar_reporte();
 }
