@@ -7,6 +7,7 @@ void pruebas_creacion()
 	hash_t *hash_1 = hash_crear(capacidad_1);
 	pa2m_afirmar(hash_1 != NULL,
 		     "Se puede rear un hash con capacidad mayor a 3");
+	pa2m_afirmar(hash_cantidad(hash_1) == 0, "El hash se inicializa vacio");
 	capacidad_1 = 2;
 	hash_t *hash_2 = hash_crear(capacidad_1);
 	pa2m_afirmar(hash_2 != NULL,
@@ -39,6 +40,8 @@ void pruebas_insercion()
 	pa2m_afirmar(
 		hash_insertar(hash, clave, elemento, anterior) == hash,
 		"Se puede insertar en un hash valido con clave valida y un elemento no nulo");
+	pa2m_afirmar(hash_cantidad(hash) == 1,
+		     "Al insertar aumenta la cantidad de elementos en el hash");
 
 	hash_destruir(hash);
 
@@ -47,11 +50,16 @@ void pruebas_insercion()
 
 	int valores[5] = { 1, 2, 3, 4, 5 };
 	const char *claves[5] = { "A", "B", "C", "D", "E" };
-	for (int i = 0; i < 6; i++) {
+	for (int i = 0; i < 6;
+	     i++) { //esto va a mostrar una prueba varias veces
 		pa2m_afirmar(hash_insertar(hash_2, claves[i], valores[i],
 					   anterior) == hash,
 			     "Se pueden insertar varios elementos");
 	};
+
+	pa2m_afirmar(
+		hash_cantidad(hash_2) == 5,
+		"Luego de insertar varios elementos tengo la cantidad correcta");
 
 	hash_destruir(hash_2);
 
@@ -68,6 +76,11 @@ void pruebas_insercion()
 				      anterior) == hash,
 			"Inserto valores suficientes para provocar un rehash");
 	}
+
+	pa2m_afirmar(
+		hash_cantidad(hash_2) == 10,
+		"Luego de insertar varios elementos y hacer rehash tengo la cantidad correcta");
+
 	pa2m_afirmar(hash_insertar(hash_3, claves_2[1], valores_2[7],
 				   anterior) == hash,
 		     "Actualizo un elemento");
@@ -129,6 +142,40 @@ void pruebas_obtencion()
 		     "Obtener con una clave que se quito devuelve NULL");
 	hash_destruir(hash);
 }
+
+void pruebas_contener()
+{
+	pa2m_afirmar(
+		hash_contiene(NULL, "k") == false,
+		"Fijarse si una clave esta en un hash nulo devuelve falso");
+
+	size_t capacidad = 10;
+	hash_t *hash = hash_crear(capacidad);
+
+	pa2m_afirmar(
+		hash_contiene(hash, NULL) == false,
+		"Fijarse si una clave nula esta en el hash devuelve falso");
+
+	int *anterior;
+	int valores[10] = { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 };
+	const char *claves = {
+		"A", "B", "C", "D", "E", "F", "G", "H", "I", "J"
+	};
+	for (int i = 0; i < 11; i++)
+		hash_insertar(hash, claves[i], valores[i], anterior);
+
+	pa2m_afirmar(
+		hash_contiene(hash, "E") == true,
+		"Fijarse si una clave valida que inserte esta en el hash devuelve true");
+	pa2m_afirmar(
+		hash_contiene(hash, "k") == false,
+		"Fijarse si un hash contiene una clave valida que no esta en el hash devuelve false");
+	hash_quitar(hash, "C");
+	pa2m_afirmar(
+		hash_contiene(hash, "C") == false,
+		"Fijarse si el hash contiene una clave valida que quite devuelve falso");
+	hash_destruir(hash);
+}
 int main()
 {
 	pa2m_nuevo_grupo("\nPruebas de Creacion");
@@ -142,6 +189,9 @@ int main()
 
 	pa2m_nuevo_grupo("\nPruebas de Obtencion");
 	pruebas_obtencion();
+
+	pa2m_nuevo_grupo("\nPruebas de Contener");
+	pruebas_contener();
 
 	return pa2m_mostrar_reporte();
 }
