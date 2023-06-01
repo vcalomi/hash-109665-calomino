@@ -71,6 +71,38 @@ void pruebas_insercion()
 	pa2m_afirmar(hash_insertar(hash_3, claves_2[1], valores_2[7],
 				   anterior) == hash,
 		     "Actualizo un elemento");
+
+	hash_destruir(hash_3);
+}
+
+void pruebas_eliminacion()
+{
+	char *clave = "A";
+	pa2m_afirmar(hash_quitar(NULL, clave) == NULL,
+		     "Quitar un elemento de un hash nulo devuelve NULL");
+
+	size_t capacidad = 10;
+	hash_t *hash = hash_crear(capacidad);
+
+	pa2m_afirmar(
+		hash_quitar(hash, NULL) == NULL,
+		"Quitar de un hash valido con una clave nula devuelve NULL");
+
+	int *anterior;
+	int valores[10] = { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 };
+	const char *claves = {
+		"A", "B", "C", "D", "E", "F", "G", "H", "I", "J"
+	};
+	for (int i = 0; i < 11; i++)
+		hash_insertar(hash, claves[i], valores[i], anterior);
+
+	pa2m_afirmar(hash_quitar(hash, "k") == NULL,
+		     "Quitar un elemento que no existe devuelve NULL");
+	pa2m_afirmar(hash_quitar(hash, "E") == valores[4],
+		     "Quitar un elemento que existe devuelve el elemento");
+	pa2m_afirmar(hash_quitar(hash, "E") == NULL,
+		     "Quitar un elemento que ya saque devuelve NULL");
+	hash_destruir(hash);
 }
 int main()
 {
@@ -79,6 +111,9 @@ int main()
 
 	pa2m_nuevo_grupo("\nPruebas de Insercion");
 	pruebas_insercion();
+
+	pa2m_nuevo_grupo("\nPruebas de Eliminacion");
+	pruebas_eliminacion();
 
 	return pa2m_mostrar_reporte();
 }
