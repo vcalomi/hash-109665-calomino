@@ -1,5 +1,6 @@
 #include "pa2m.h"
 #include "src/hash.h"
+#include <string.h>
 
 void pruebas_creacion()
 {
@@ -176,6 +177,60 @@ void pruebas_contener()
 		"Fijarse si el hash contiene una clave valida que quite devuelve falso");
 	hash_destruir(hash);
 }
+
+bool funcion_para_iterar_completo(const char *clave, void *elemento, void *aux)
+{
+	return true;
+}
+
+bool funcion_para_no_iterar_completo(const char *clave, void *elemento,
+				     void *aux)
+{
+	if (strcmp(clave, "F") == 0)
+		return false;
+}
+
+void pruebas_iterador_interno()
+{
+	int *aux = 5;
+	pa2m_afirmar(hash_con_cada_clave(NULL, funcion_para_iterar_completo,
+					 aux) == 0,
+		     "Iterar con un hash nulo devuelve 0");
+
+	size_t capacidad = 10;
+	hash_t *hash = hash_crear(capacidad);
+
+	pa2m_afirmar(hash_con_cada_clave(hash, NULL, aux) == 0,
+		     "Iterar un hash valido con funcion nula devuelve 0");
+
+	int *anterior;
+	hash_insertar(hash, "B", 5, anterior);
+	hash_insertar(hash, "K", 26, anterior);
+
+	pa2m_afirmar(hash_con_cada_clave(hash, funcion_para_iterar_completo,
+					 NULL) == 2,
+		     "Se puede iterar el hash con un auxiliar nulo");
+
+	hash_quitar(hash, "B");
+	hash_quitar(hash, "K");
+
+	int *anterior;
+	int valores[10] = { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 };
+	const char *claves = {
+		"A", "B", "C", "D", "E", "F", "G", "H", "I", "J"
+	};
+	for (int i = 0; i < 11; i++)
+		hash_insertar(hash, claves[i], valores[i], anterior);
+
+	pa2m_afirmar(hash_con_cada_clave(hash, funcion_para_iterar_completo,
+					 aux) == 10,
+		     "Iterar el hash completo devuelve la cantidad correcta");
+	pa2m_afirmar(
+		hash_con_cada_clave(hash, funcion_para_no_iterar_completo,
+				    aux) == 6,
+		"Puedo iterar el hash hasta cierta parte y devuelve la cantidad correcta");
+	hash_destruir(hash);
+}
 int main()
 {
 	pa2m_nuevo_grupo("\nPruebas de Creacion");
@@ -192,6 +247,9 @@ int main()
 
 	pa2m_nuevo_grupo("\nPruebas de Contener");
 	pruebas_contener();
+
+	pa2m_nuevo_grupo("\nPruebas de Iterador interno");
+	pruebas_iterador_interno();
 
 	return pa2m_mostrar_reporte();
 }
