@@ -122,12 +122,27 @@ size_t hash_cantidad(hash_t *hash)
 {
 	if (!hash)
 		return 0;
-	return 0;
+	return (size_t)hash->cantidad;
+}
+
+void hash_destruir_vector(hash_t *hash)
+{
+	if (!hash->vector || hash->cantidad == 0) {
+		free(hash->vector);
+		return;
+	}
+	struct nodo *actual = hash->vector[0];
+	while (actual) {
+		struct nodo *sig = actual->siguiente;
+		free(actual);
+		actual = sig;
+	}
 }
 
 void hash_destruir(hash_t *hash)
 {
-	hash_destruir_todo(hash, NULL);
+	hash_destruir_vector(hash);
+	free(hash);
 }
 
 void hash_destruir_todo(hash_t *hash, void (*destructor)(void *))
