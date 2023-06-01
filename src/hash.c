@@ -4,10 +4,32 @@
 #include "hash.h"
 
 #define FACTOR_CARGA_MAXIMO 0.7
+#define CAPACIDAD_MINIMA 3
+
+struct nodo {
+	char *clave;
+	void *valor;
+	struct nodo *siguiente;
+};
+
+struct hash {
+	size_t capacidad;
+	size_t cantidad;
+	struct nodo **vector;
+};
 
 hash_t *hash_crear(size_t capacidad)
 {
-	return NULL;
+	hash_t *hash = calloc(1, sizeof(hash_t));
+	if (!hash)
+		return NULL;
+	if (capacidad < CAPACIDAD_MINIMA)
+		capacidad = CAPACIDAD_MINIMA;
+	hash->capacidad = capacidad;
+	hash->vector = calloc(1, sizeof(struct nodo *) * capacidad);
+	if (!hash->vector)
+		return NULL;
+	return hash;
 }
 
 hash_t *hash_insertar(hash_t *hash, const char *clave, void *elemento,
