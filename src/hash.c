@@ -96,7 +96,6 @@ void reinsertar_par(struct nodo **vector_nuevo, struct nodo *par, int capacidad)
 	return;
 }
 
-// implementar un insertar propio que reciba el par
 hash_t *rehash(hash_t *hash)
 {
 	int capacidad_vieja = hash->capacidad;
@@ -132,7 +131,6 @@ hash_t *hash_insertar(hash_t *hash, const char *clave, void *elemento,
 		hash = rehash(hash);
 	}
 
-	//fijarse la copia esta despues, puede dar error
 	char *copia_clave = strdup(clave);
 
 	int resultado = abs((int)funcion_hash(clave));
@@ -142,13 +140,16 @@ hash_t *hash_insertar(hash_t *hash, const char *clave, void *elemento,
 		struct nodo *nodo = nodo_crear(copia_clave, elemento);
 		hash->vector[posicion] = nodo;
 		hash->cantidad++;
+		if (anterior != NULL)
+			*anterior = NULL;
 		return hash;
 	}
 
 	struct nodo *actual = hash->vector[posicion];
 	while (actual) {
 		if (strcmp(clave, actual->clave) == 0) {
-			//*anterior = actual->elemento; // si, pero hay un error
+			if (anterior != NULL)
+				*anterior = actual->elemento;
 			actual->elemento = elemento;
 			free(copia_clave);
 			return hash;
@@ -160,7 +161,6 @@ hash_t *hash_insertar(hash_t *hash, const char *clave, void *elemento,
 	nodo->siguiente = hash->vector[posicion];
 	hash->vector[posicion] = nodo;
 	hash->cantidad++;
-
 	return hash;
 }
 
