@@ -144,8 +144,24 @@ void *hash_quitar(hash_t *hash, const char *clave)
 
 void *hash_obtener(hash_t *hash, const char *clave)
 {
-	if (!hash)
+	if (!hash || !clave)
 		return NULL;
+
+	char *copia_clave = strdup(clave);
+
+	int resultado = abs((int)funcion_hash(copia_clave));
+	int posicion = resultado % hash->capacidad;
+
+	if (hash->vector[posicion] == NULL)
+		return NULL;
+
+	struct nodo *actual = hash->vector[posicion];
+	while (actual) {
+		if (strcmp(copia_clave, actual->clave) == 0) {
+			return actual->elemento;
+		}
+		actual = actual->siguiente;
+	}
 
 	return NULL;
 }
