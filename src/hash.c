@@ -32,16 +32,21 @@ hash_t *hash_crear(size_t capacidad)
 	return hash;
 }
 
-int djb2_hash(const char *str)
+unsigned int funcion_hash(const char *str)
 {
-	int hash = 5381;
-	char c;
-	while ((c = (char)*str++))
-		hash = ((hash << 5) + hash) + c; /* hash * 33 + c */
+	unsigned int hash = 2166136261u;
+	const unsigned int prime = 16777619u;
+
+	while (*str != '\0') {
+		hash ^= (unsigned int)(*str);
+		hash *= prime;
+		++str;
+	}
+
 	return hash;
 }
 
-char *strdup(const char *str)
+char *strdup(const char *str) // quiza no es necesario
 {
 	size_t length = strlen(str);
 	char *copy = (char *)malloc(length + 1);
@@ -62,34 +67,69 @@ struct nodo *nodo_crear(const char *clave, void *elemento)
 	return nodo;
 }
 
+// implementar un insertar propio que reciba el par
+hash_t *rehash(hash_t *hash)
+{
+	int capacidad_vieja = hash->capacidad;
+	struct nodo **vector_viejo = hash->vector;
+	hash->vector =
+		calloc(1, sizeof(struct nodo) *
+				  (long unsigned int)hash->capacidad * 2);
+	if (!hash->vector)
+		return NULL;
+	hash->capacidad *= 2;
+	hash->cantidad = 0;
+
+	for (int posicion = 0; posicion < capacidad_vieja; posicion++) {
+		struct nodo *actual = vector_viejo[posicion];
+		while (actual) {
+			hash_insertar(hash, actual->clave, actual->elemento,
+				      NULL);
+			actual = actual->siguiente;
+		}
+	}
+	free(vector_viejo);
+	return hash;
+}
+
 hash_t *hash_insertar(hash_t *hash, const char *clave, void *elemento,
 		      void **anterior)
 {
-	if (!hash || !clave)
+	if (!hash || !clave || hash->vector == NULL)
 		return NULL;
 
+	float factor_de_carga = (float)hash->cantidad / (float)hash->capacidad;
+	if (factor_de_carga > FACTOR_CARGA_MAXIMO) {
+		hash = rehash(hash);
+	}
+
+	//fijarse la copia esta despues, puede dar error
 	char *copia_clave = strdup(clave);
 
-	int posicion = djb2_hash(copia_clave) % hash->capacidad;
+	int resultado = abs((int)funcion_hash(copia_clave));
+	int posicion = resultado % hash->capacidad;
 
-	struct nodo *nodo = nodo_crear(clave, elemento);
 	if (hash->vector[posicion] == NULL) {
+		struct nodo *nodo = nodo_crear(clave, elemento);
 		hash->vector[posicion] = nodo;
+		hash->cantidad++;
 		return hash;
 	}
 
 	struct nodo *actual = hash->vector[posicion];
 	while (actual) {
-		if (strcmp(clave, actual->clave) == 0) {
-			free(nodo);
+		if (strcmp(copia_clave, actual->clave) == 0) {
+			//*anterior = actual->elemento; // si, pero hay un error
 			actual->elemento = elemento;
 			return hash;
 		}
 		actual = actual->siguiente;
 	}
 
+	struct nodo *nodo = nodo_crear(clave, elemento);
 	nodo->siguiente = hash->vector[posicion];
 	hash->vector[posicion] = nodo;
+	hash->cantidad++;
 
 	return hash;
 }
