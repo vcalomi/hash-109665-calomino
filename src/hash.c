@@ -169,6 +169,26 @@ void *hash_quitar(hash_t *hash, const char *clave)
 	if (!hash)
 		return NULL;
 
+	int resultado = abs((int)funcion_hash(clave));
+	int posicion = resultado % hash->capacidad;
+
+	if (hash->vector[posicion] == NULL) {
+		return NULL;
+	}
+	struct nodo *actual = hash->vector[posicion];
+	struct nodo *anterior = NULL;
+	while (actual) {
+		if (strcmp(clave, actual->clave) == 0) {
+			void *elemento = actual->elemento;
+			hash->cantidad--;
+			hash->vector[posicion] = anterior;
+			free(actual->clave);
+			free(actual);
+			return elemento;
+		}
+		anterior = actual;
+		actual = actual->siguiente;
+	}
 	return NULL;
 }
 
@@ -177,25 +197,19 @@ void *hash_obtener(hash_t *hash, const char *clave)
 	if (!hash || !clave)
 		return NULL;
 
-	char *copia_clave = strdup(clave);
-
-	int resultado = abs((int)funcion_hash(copia_clave));
+	int resultado = abs((int)funcion_hash(clave));
 	int posicion = resultado % hash->capacidad;
 
-	if (hash->vector[posicion] == NULL) {
-		free(copia_clave);
+	if (hash->vector[posicion] == NULL)
 		return NULL;
-	}
 
 	struct nodo *actual = hash->vector[posicion];
 	while (actual) {
-		if (strcmp(copia_clave, actual->clave) == 0) {
-			free(copia_clave);
+		if (strcmp(clave, actual->clave) == 0) {
 			return actual->elemento;
 		}
 		actual = actual->siguiente;
 	}
-	free(copia_clave);
 	return NULL;
 }
 
@@ -204,6 +218,15 @@ bool hash_contiene(hash_t *hash, const char *clave)
 	if (!hash)
 		return NULL;
 
+	for (size_t i = 0; i < hash->capacidad; i++) {
+		struct nodo *actual = hash->vector[i];
+		while (actual) {
+			if (strcmp(clave, actual->clave) == 0) {
+				return true;
+			}
+			actual = actual->siguiente;
+		}
+	}
 	return false;
 }
 
