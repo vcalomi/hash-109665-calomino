@@ -310,11 +310,12 @@ size_t hash_con_cada_clave(hash_t *hash,
 		while (actual) {
 			if (f(actual->clave, actual->elemento, aux) == true)
 				n++;
-			else
+			else {
+				n++;
 				return n;
+			}
 			actual = actual->siguiente;
 		}
 	}
-
 	return n;
 }
