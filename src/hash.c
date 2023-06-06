@@ -1,6 +1,5 @@
 #include <string.h>
 #include <stdlib.h>
-#include <stdio.h>
 
 #include "hash.h"
 
@@ -75,7 +74,7 @@ void reinsertar_par(struct nodo **vector_nuevo, struct nodo *par, int capacidad)
 	if (vector_nuevo == NULL || par == NULL)
 		return;
 
-	par->siguiente = NULL; //esto es un problema
+	par->siguiente = NULL;
 
 	int resultado = abs((int)funcion_hash(par->clave));
 	int posicion = resultado % capacidad;
@@ -280,7 +279,7 @@ void hash_destruir(hash_t *hash)
 
 void hash_destruir_todo(hash_t *hash, void (*destructor)(void *))
 {
-	if (hash == NULL || destructor == NULL)
+	if (hash == NULL)
 		return;
 
 	for (size_t i = 0; i < hash->capacidad; i++) {
@@ -288,7 +287,8 @@ void hash_destruir_todo(hash_t *hash, void (*destructor)(void *))
 		while (actual) {
 			struct nodo *siguiente = actual->siguiente;
 			free(actual->clave);
-			destructor(actual->elemento);
+			if (destructor != NULL)
+				destructor(actual->elemento);
 			free(actual);
 			actual = siguiente;
 		}
