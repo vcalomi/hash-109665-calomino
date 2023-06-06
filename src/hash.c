@@ -6,16 +6,16 @@
 #define FACTOR_CARGA_MAXIMO 0.7
 #define CAPACIDAD_MINIMA 3
 
-struct nodo {
+typedef struct par {
 	char *clave;
 	void *elemento;
-	struct nodo *siguiente;
-};
+	struct par *siguiente;
+} par_t;
 
 struct hash {
 	int capacidad;
 	int cantidad;
-	struct nodo **vector;
+	par_t **pares;
 };
 
 hash_t *hash_crear(size_t capacidad)
@@ -26,8 +26,8 @@ hash_t *hash_crear(size_t capacidad)
 	if (capacidad < CAPACIDAD_MINIMA)
 		capacidad = CAPACIDAD_MINIMA;
 	hash->capacidad = (int)capacidad;
-	hash->vector = calloc(1, sizeof(struct nodo *) * capacidad);
-	if (!hash->vector)
+	hash->pares = calloc(1, sizeof(par_t *) * capacidad);
+	if (!hash->pares)
 		return NULL;
 	return hash;
 }
@@ -58,18 +58,18 @@ unsigned int funcion_hash(const char *str)
 	return hash;
 }
 
-struct nodo *nodo_crear(char *clave, void *elemento)
+par_t *par_crear(char *clave, void *elemento)
 {
-	struct nodo *nodo = malloc(sizeof(struct nodo));
-	if (!nodo)
+	par_t *par = malloc(sizeof(par_t));
+	if (!par)
 		return NULL;
-	nodo->clave = clave;
-	nodo->elemento = elemento;
-	nodo->siguiente = NULL;
-	return nodo;
+	par->clave = clave;
+	par->elemento = elemento;
+	par->siguiente = NULL;
+	return par;
 }
 
-void reinsertar_par(struct nodo **vector_nuevo, struct nodo *par, int capacidad)
+void reinsertar_par(par_t **vector_nuevo, par_t *par, int capacidad)
 {
 	if (vector_nuevo == NULL || par == NULL)
 		return;
@@ -90,14 +90,14 @@ void reinsertar_par(struct nodo **vector_nuevo, struct nodo *par, int capacidad)
 	return;
 }
 
-void guardar_en_vector(struct nodo **vector_viejo, struct nodo **vector_pares,
+void guardar_en_vector(par_t **vector_viejo, par_t **vector_pares,
 		       size_t *indice, int capacidad)
 {
 	if (vector_viejo == NULL || vector_pares == NULL || indice == NULL)
 		return;
 
 	for (int posicion = 0; posicion < capacidad; posicion++) {
-		struct nodo *actual = vector_viejo[posicion];
+		par_t *actual = vector_viejo[posicion];
 		while (actual) {
 			vector_pares[(*indice)++] = actual;
 			actual = actual->siguiente;
@@ -109,25 +109,24 @@ void rehash(hash_t *hash)
 {
 	int capacidad_vieja = hash->capacidad;
 	int cantidad_vieja = hash->cantidad;
-	struct nodo **vector_viejo = hash->vector;
-	hash->vector =
-		calloc(1, sizeof(struct nodo) *
-				  (long unsigned int)hash->capacidad * 2);
-	if (!hash->vector)
+	par_t **vector_viejo = hash->pares;
+	hash->pares = calloc(1, sizeof(par_t) *
+					(long unsigned int)hash->capacidad * 2);
+	if (!hash->pares)
 		return;
 
 	hash->capacidad *= 2;
 	hash->cantidad = 0;
 
-	struct nodo **vector_pares = calloc(
-		1, sizeof(struct nodo) * (long unsigned int)cantidad_vieja);
+	par_t **vector_pares =
+		calloc(1, sizeof(par_t) * (long unsigned int)cantidad_vieja);
 	if (!vector_pares)
 		return;
 	size_t indice = 0;
 	guardar_en_vector(vector_viejo, vector_pares, &indice, capacidad_vieja);
 
 	for (size_t i = 0; i < cantidad_vieja; i++) {
-		reinsertar_par(hash->vector, vector_pares[i], hash->capacidad);
+		reinsertar_par(hash->pares, vector_pares[i], hash->capacidad);
 		hash->cantidad++;
 	}
 
@@ -138,7 +137,7 @@ void rehash(hash_t *hash)
 hash_t *hash_insertar(hash_t *hash, const char *clave, void *elemento,
 		      void **anterior)
 {
-	if (hash == NULL || clave == NULL || hash->vector == NULL)
+	if (hash == NULL || clave == NULL || hash->pares == NULL)
 		return NULL;
 
 	float factor_de_carga = (float)hash->cantidad / (float)hash->capacidad;
@@ -146,35 +145,33 @@ hash_t *hash_insertar(hash_t *hash, const char *clave, void *elemento,
 		rehash(hash);
 	}
 
-	char *copia_clave = strdup(clave);
-
 	int resultado = abs((int)funcion_hash(clave));
 	int posicion = resultado % hash->capacidad;
 
-	if (hash->vector[posicion] == NULL) {
-		struct nodo *nodo = nodo_crear(copia_clave, elemento);
-		hash->vector[posicion] = nodo;
+	if (hash->pares[posicion] == NULL) {
+		char *copia_clave = strdup(clave);
+		par_t *nodo = par_crear(copia_clave, elemento);
+		hash->pares[posicion] = nodo;
 		hash->cantidad++;
 		if (anterior != NULL)
 			*anterior = NULL;
 		return hash;
 	}
 
-	struct nodo *actual = hash->vector[posicion];
+	par_t *actual = hash->pares[posicion];
 	while (actual) {
 		if (strcmp(clave, actual->clave) == 0) {
 			if (anterior != NULL)
 				*anterior = actual->elemento;
 			actual->elemento = elemento;
-			free(copia_clave);
 			return hash;
 		}
 		actual = actual->siguiente;
 	}
-
-	struct nodo *nodo = nodo_crear(copia_clave, elemento);
-	nodo->siguiente = hash->vector[posicion];
-	hash->vector[posicion] = nodo;
+	char *copia_clave = strdup(clave);
+	par_t *nodo = par_crear(copia_clave, elemento);
+	nodo->siguiente = hash->pares[posicion];
+	hash->pares[posicion] = nodo;
 	hash->cantidad++;
 	return hash;
 }
@@ -187,19 +184,19 @@ void *hash_quitar(hash_t *hash, const char *clave)
 	int resultado = abs((int)funcion_hash(clave));
 	int posicion = resultado % hash->capacidad;
 
-	if (hash->vector[posicion] != NULL &&
-	    strcmp(clave, hash->vector[posicion]->clave) == 0) {
-		void *elemento = hash->vector[posicion]->elemento;
-		struct nodo *a_eliminar = hash->vector[posicion];
-		hash->vector[posicion] = a_eliminar->siguiente;
+	if (hash->pares[posicion] != NULL &&
+	    strcmp(clave, hash->pares[posicion]->clave) == 0) {
+		void *elemento = hash->pares[posicion]->elemento;
+		par_t *a_eliminar = hash->pares[posicion];
+		hash->pares[posicion] = a_eliminar->siguiente;
 		hash->cantidad--;
 		free(a_eliminar->clave);
 		free(a_eliminar);
 		return elemento;
 	}
 
-	struct nodo *actual = hash->vector[posicion];
-	struct nodo *anterior = NULL;
+	par_t *actual = hash->pares[posicion];
+	par_t *anterior = NULL;
 	while (actual != NULL) {
 		if (strcmp(clave, actual->clave) == 0) {
 			void *elemento = actual->elemento;
@@ -217,16 +214,16 @@ void *hash_quitar(hash_t *hash, const char *clave)
 
 void *hash_obtener(hash_t *hash, const char *clave)
 {
-	if (hash == NULL || clave == NULL || hash->vector == NULL)
+	if (hash == NULL || clave == NULL || hash->pares == NULL)
 		return NULL;
 
 	int resultado = abs((int)funcion_hash(clave));
 	int posicion = resultado % hash->capacidad;
 
-	if (hash->vector[posicion] == NULL)
+	if (hash->pares[posicion] == NULL)
 		return NULL;
 
-	struct nodo *actual = hash->vector[posicion];
+	par_t *actual = hash->pares[posicion];
 	while (actual) {
 		if (strcmp(clave, actual->clave) == 0) {
 			return actual->elemento;
@@ -241,14 +238,18 @@ bool hash_contiene(hash_t *hash, const char *clave)
 	if (hash == NULL || clave == NULL)
 		return false;
 
-	for (size_t i = 0; i < hash->capacidad; i++) {
-		struct nodo *actual = hash->vector[i];
-		while (actual) {
-			if (strcmp(clave, actual->clave) == 0) {
-				return true;
-			}
-			actual = actual->siguiente;
+	int resultado = abs((int)funcion_hash(clave));
+	int posicion = resultado % hash->capacidad;
+
+	if (hash->pares[posicion] == NULL)
+		return false;
+
+	par_t *actual = hash->pares[posicion];
+	while (actual) {
+		if (strcmp(clave, actual->clave) == 0) {
+			return true;
 		}
+		actual = actual->siguiente;
 	}
 	return false;
 }
@@ -265,15 +266,15 @@ void hash_destruir(hash_t *hash)
 	if (hash == NULL)
 		return;
 	for (size_t i = 0; i < hash->capacidad; i++) {
-		struct nodo *actual = hash->vector[i];
+		par_t *actual = hash->pares[i];
 		while (actual != NULL) {
-			struct nodo *siguiente = actual->siguiente;
+			par_t *siguiente = actual->siguiente;
 			free(actual->clave);
 			free(actual);
 			actual = siguiente;
 		}
 	}
-	free(hash->vector);
+	free(hash->pares);
 	free(hash);
 }
 
@@ -283,9 +284,9 @@ void hash_destruir_todo(hash_t *hash, void (*destructor)(void *))
 		return;
 
 	for (size_t i = 0; i < hash->capacidad; i++) {
-		struct nodo *actual = hash->vector[i];
+		par_t *actual = hash->pares[i];
 		while (actual) {
-			struct nodo *siguiente = actual->siguiente;
+			par_t *siguiente = actual->siguiente;
 			free(actual->clave);
 			if (destructor != NULL)
 				destructor(actual->elemento);
@@ -293,7 +294,7 @@ void hash_destruir_todo(hash_t *hash, void (*destructor)(void *))
 			actual = siguiente;
 		}
 	}
-	free(hash->vector);
+	free(hash->pares);
 	free(hash);
 }
 
@@ -306,7 +307,7 @@ size_t hash_con_cada_clave(hash_t *hash,
 		return n;
 
 	for (size_t i = 0; i < hash->capacidad; i++) {
-		struct nodo *actual = hash->vector[i];
+		par_t *actual = hash->pares[i];
 		while (actual) {
 			if (f(actual->clave, actual->elemento, aux) == true)
 				n++;
