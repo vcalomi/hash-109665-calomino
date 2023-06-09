@@ -119,7 +119,7 @@ void reinsertar_par(struct nodo **vector_nuevo, struct nodo *par, int capacidad)
 
 En donde podemos ver el problema mencionado en este fragmento `par->siguiente = NULL`. Esto ocasionaba que al reinsertar un par perdieramos las colisiones encadenadas a el, por ello guardo todos los pares en un vector y asi no es problema perder las colisiones asociadas.
 
-En esta implementacion, rehash es una operacion ineficiente en tiempo, ya que debo recorrer dos veces los elementos del hash, una para guardarlos en un vector y luego recorrer ese vector para reinsertarlos en el hash. Por tanto, esta operacion es O(n)\*O(n) = O(n²). Las demas operaciones, como crear y liberar las consideramos O(1).
+En esta implementacion, rehash es una operacion ineficiente en tiempo, ya que debo recorrer dos veces los elementos del hash, una para guardarlos en un vector y luego recorrer ese vector para reinsertarlos en el hash. Por tanto, al ser instrucciones consecutivas y ambas ser O(n), la operacion termina siendo O(n). Las demas operaciones, como crear y liberar las consideramos O(1).
 La razon para esta implementacion es para ser mas eficiente en memoria y no liberar y volver a crear pares que contienen la misma informacion.
 
 Insertar:
@@ -255,7 +255,10 @@ Estas operaciones son similares, unicamente debo recorrer todo los pares del has
   Como vimos en el punto anterior, estas posiciones "unicas" son imposibles de obtener en todos los casos y por ello existen distintas formas de salvaguardar las colisiones.
 
   - Una opcion es una tabla de hash abierta, con direccionamiento cerrado (la implementada en este TP). En esta implementacion se asegura que al obtener una posicion del vector a traves del hasheo de la clave provista, el valor asociado a la clave se encontrara en esa posicion o no existe (direccionamiento cerrado). Con este fin, en el caso de que haya colisiones, se encadenan a traves de una estructura externa, por ejemplo una lista (por esto el hash es abierto, se puede encontrar valores por fuera de la estructura principal).
-    Otra manera de contemplar las colisiones en un hash abierto es tener una zona de desborde, que nuevamente puede ser una lista o arbol por ejemplo. Entonces al ocurrir una colision se asocia la posicion de la clave con una posicion en la zona de desborde.
+    <img width=70% src="./img/hash_abierto_chaining.svg">
+
+  Otra manera de contemplar las colisiones en un hash abierto es tener una zona de desborde, que nuevamente puede ser una lista o arbol por ejemplo. Entonces al ocurrir una colision se asocia la posicion de la clave con una posicion en la zona de desborde.
+  <img width=70% src="./img/hash_abierto_zona_desborde.svg">
 
   - Otra opcion son tablas de hash cerradas pero con direccionamiento abierto. En estas se asegura el uso exclusivo de la estructura , es decir, sin usar estructuras externas (hash cerrado), pero no se asegura que al hashear una clave la misma se encuentre en la posicion obtenida. Para lograr esto, el tamaño de la tabla tiene que ser menor o igual a la cantidad de claves.
 
@@ -263,4 +266,6 @@ Estas operaciones son similares, unicamente debo recorrer todo los pares del has
 
     - Probing lineal: al ocurrir una colision se busca la siguiente posicion desocupada para almacenar la clave que colisiono.
 
-    Hay otro metodos de probing, como el probing cuadratico o hash doble.
+    <img width=70% src="./img/hash_cerrado.svg">
+
+  Hay otro metodos de probing, como el probing cuadratico o hash doble.
